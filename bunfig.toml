@@ -1,0 +1,11 @@
+[install]
+# Use npm registry for packages
+registry = "https://registry.npmjs.org/"
+
+[install.cache]
+# Disable cache for development
+disable = false
+
+[run]
+# Enable hot reload for development
+bun = "--hot"

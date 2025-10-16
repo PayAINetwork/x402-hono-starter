@@ -1,0 +1,28 @@
+{
+  "name": "hono-app-example",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --outdir ./dist --target bun",
+    "start": "bun run dist/index.js",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier -c .prettierrc --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier -c .prettierrc --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "x402-hono": "^0.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
+    "eslint": "^9.24.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsdoc": "^50.6.9",
+    "eslint-plugin-prettier": "^5.2.6",
+    "prettier": "3.5.2",
+    "typescript": "^5.6.0"
+  }
+}
