@@ -1,0 +1,2 @@
+This package includes portions derived from coinbase/x402 (examples/typescript/servers/hono), Apache-2.0,
+commit f74bda39cc692f97e55fdb0bbfdff4a0f5e7f758. See LICENSE and upstream LICENSE notices.
