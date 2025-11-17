@@ -63,6 +63,13 @@ jobs:
             echo "No sanitize script found; skipping."
           fi
 
+      - name: Ensure sanitize script intact
+        run: |
+          if [ ! -s scripts/sanitize.sh ]; then
+            echo "ERROR: scripts/sanitize.sh is missing or empty"
+            exit 1
+          fi
+
       - name: Verify custom env values are preserved
         run: |
           set -euo pipefail
