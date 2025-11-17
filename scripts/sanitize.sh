@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# This comment is a harmless no-op to ensure GitHub shows the script contents in PRs
 UP_PATH="${1:-examples/typescript/servers/hono}"
 UP_SHA="${2:-unknown}"
 
