@@ -39,10 +39,10 @@ jobs:
           git sparse-checkout set "${UPSTREAM_PATH}"
           echo "UPSTREAM_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-      - name: Resolve latest x402-hono version from npm
+      - name: Resolve latest @x402/hono version from npm
         run: |
           set -euo pipefail
-          VERSION=$(npm view x402-hono version || echo "0.0.0")
+          VERSION=$(npm view @x402/hono version || echo "0.0.0")
           echo "X402_HONO_VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Record resolved version in root package.json
@@ -95,9 +95,9 @@ jobs:
 
           echo "✓ FACILITATOR_URL and NETWORK are correctly set"
 
-      - name: Inject x402-hono version into template/package.json
+      - name: Inject @x402/hono version into template/package.json
         run: |
-          node -e "const fs=require('fs');const p='template/package.json';if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,'utf8'));const v=process.env.X402_HONO_VERSION;const setVer=(obj)=>{if(!obj)return false; if(Object.prototype.hasOwnProperty.call(obj,'x402-hono')){if(v!=='0.0.0'){obj['x402-hono']='^'+v;} else {delete obj['x402-hono'];} return true;} return false;};const changed=setVer(j.dependencies)||setVer(j.devDependencies);if(!changed && v!=='0.0.0'){(j.dependencies??={})['x402-hono']='^'+v;}fs.writeFileSync(p,JSON.stringify(j,null,2));}"
+          node -e "const fs=require('fs');const p='template/package.json';if(fs.existsSync(p)){const j=JSON.parse(fs.readFileSync(p,'utf8'));const v=process.env.X402_HONO_VERSION;const setVer=(obj)=>{if(!obj)return false; if(Object.prototype.hasOwnProperty.call(obj,'@x402/hono')){if(v!=='0.0.0'){obj['@x402/hono']='^'+v;} else {delete obj['@x402/hono'];} return true;} return false;};const changed=setVer(j.dependencies)||setVer(j.devDependencies);if(!changed && v!=='0.0.0'){(j.dependencies??={})['@x402/hono']='^'+v;}fs.writeFileSync(p,JSON.stringify(j,null,2));}"
 
       - name: Determine if there are changes
         run: |
