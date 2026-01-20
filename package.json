@@ -1,6 +1,6 @@
 {
   "name": "hono-app-example",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "bun run --hot src/index.ts",
@@ -26,6 +26,6 @@
     "typescript": "^5.6.0"
   },
   "config": {
-    "x402HonoVersion": "0.7.1"
+    "x402HonoVersion": "1.1.0"
   }
 }
