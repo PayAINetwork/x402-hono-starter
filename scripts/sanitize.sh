@@ -42,13 +42,22 @@ if (deps['x402-hono']) {
   delete deps['x402-hono'];
 }
 
-// Add @x402/hono with the configured version
-deps['@x402/hono'] = '^' + x402Version;
+// Add all required @x402/* packages with the configured version
+const x402Packages = ['@x402/hono', '@x402/evm', '@x402/svm', '@x402/core', '@x402/extensions'];
+for (const pkg of x402Packages) {
+  deps[pkg] = '^' + x402Version;
+}
 
 json.dependencies = deps;
 fs.writeFileSync(path, JSON.stringify(json, null, 2));
-console.log('Updated template/package.json: replaced workspace deps, using @x402/hono@^' + x402Version);
+console.log('Updated template/package.json: replaced workspace deps, using @x402/*@^' + x402Version);
 NODE
+fi
+
+# Update imports in template files from x402-hono to @x402/hono
+if [[ -f template/index.ts ]]; then
+  sed -i.bak 's/from "x402-hono"/from "@x402\/hono"/g' template/index.ts && rm -f template/index.ts.bak
+  sed -i.bak "s/from 'x402-hono'/from '@x402\/hono'/g" template/index.ts && rm -f template/index.ts.bak
 fi
 
 # add the payai facilitator URL and NETWORK in env templates after sync
