@@ -11,10 +11,9 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
+    "@x402/hono": "^2.2.0",
     "dotenv": "^16.4.7",
-    "hono": "^4.7.1",
-    "x402-hono": "^0.7.1",
-    "@coinbase/x402": "workspace:*"
+    "hono": "^4.7.1"
   },
   "devDependencies": {
     "tsup": "^7.2.0",

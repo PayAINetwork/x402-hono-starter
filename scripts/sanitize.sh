@@ -11,19 +11,43 @@ mkdir -p vendor/upstream
 mkdir -p template
 rsync -a --delete vendor/upstream/ template/
 
-# Ensure @coinbase/x402 version matches x402-hono version (standalone, no workspace)
+# Replace workspace:* dependencies with actual npm packages
+# and update package names from x402-hono to @x402/hono
 if [[ -f template/package.json ]]; then
   node - <<'NODE'
 const fs = require('fs');
 const path = 'template/package.json';
 const json = JSON.parse(fs.readFileSync(path, 'utf8'));
+
+// Get x402 version from root package.json config
+let x402Version = '2.2.0';
+try {
+  const rootPkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  if (rootPkg.config && rootPkg.config.x402HonoVersion) {
+    x402Version = rootPkg.config.x402HonoVersion;
+  }
+} catch (e) {}
+
 const deps = json.dependencies || {};
-const x402HonoVersion = deps['x402-hono'];
-if (x402HonoVersion) {
-  deps['@coinbase/x402'] = x402HonoVersion;
-  json.dependencies = deps;
-  fs.writeFileSync(path, JSON.stringify(json, null, 2));
+
+// Remove workspace:* dependencies (like @coinbase/x402)
+for (const [name, version] of Object.entries(deps)) {
+  if (typeof version === 'string' && version.startsWith('workspace:')) {
+    delete deps[name];
+  }
 }
+
+// Replace old x402-hono with @x402/hono
+if (deps['x402-hono']) {
+  delete deps['x402-hono'];
+}
+
+// Add @x402/hono with the configured version
+deps['@x402/hono'] = '^' + x402Version;
+
+json.dependencies = deps;
+fs.writeFileSync(path, JSON.stringify(json, null, 2));
+console.log('Updated template/package.json: replaced workspace deps, using @x402/hono@^' + x402Version);
 NODE
 fi
 
