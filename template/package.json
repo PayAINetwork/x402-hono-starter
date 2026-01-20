@@ -10,14 +10,14 @@
     "lint:check": "eslint . --ext .ts"
   },
   "dependencies": {
-    "@x402/core": "^2.2.0",
-    "@x402/evm": "^2.2.0",
-    "@x402/extensions": "^2.2.0",
-    "@x402/hono": "^2.2.0",
-    "@x402/svm": "^2.2.0",
     "dotenv": "^16.4.7",
     "@hono/node-server": "^1.14.0",
-    "hono": "^4.7.1"
+    "hono": "^4.7.1",
+    "@x402/hono": "^2.2.0",
+    "@x402/evm": "^2.2.0",
+    "@x402/svm": "^2.2.0",
+    "@x402/core": "^2.2.0",
+    "@x402/extensions": "^2.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
