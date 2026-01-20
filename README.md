@@ -13,13 +13,37 @@ A Hono application with x402 payment protocol integration, providing a modern we
 
 ## Getting Started
 
-### Prerequisites
+### Requirements
 
-- [Bun](https://bun.sh) installed on your system
-- A crypto wallet with some test tokens
-- Access to the x402 facilitator service
+- **Node.js**: 18 or newer
 
-### Installation
+### Create a new app using the template
+
+#### npm (npx)
+
+```bash
+npm exec @payai/x402-hono-starter -- my-x402-app
+```
+
+#### pnpm
+
+```bash
+pnpm dlx @payai/x402-hono-starter my-x402-app
+```
+
+#### bun
+
+```bash
+bunx @payai/x402-hono-starter my-x402-app
+```
+
+Then inside your new app:
+
+```bash
+npm run dev
+```
+
+### Manual Installation
 
 1. Clone or download this starter template
 2. Install dependencies:
@@ -136,4 +160,4 @@ The application can be deployed to any platform that supports Bun or Node.js:
 
 ## License
 
-This project is licensed under the same terms as the original x402-next-starter.
+Apache-2.0
