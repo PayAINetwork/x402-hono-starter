@@ -45,11 +45,6 @@ jobs:
           VERSION=$(npm view @x402/hono version 2>/dev/null || echo "0.0.0")
           echo "X402_HONO_VERSION=${VERSION}" >> $GITHUB_ENV
 
-      - name: Store old version for comparison
-        run: |
-          OLD_HONO=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('package.json','utf8'));const c=j.config||{};console.log(c.x402HonoVersion||'0.0.0')")
-          echo "OLD_X402_HONO_VERSION=${OLD_HONO}" >> $GITHUB_ENV
-
       - name: Record resolved version in root package.json
         run: |
           node -e "const fs=require('fs');const p='package.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));(j.config??={});j.config.x402HonoVersion=process.env.X402_HONO_VERSION;fs.writeFileSync(p,JSON.stringify(j,null,2));"
@@ -130,58 +125,28 @@ jobs:
             echo "HAS_CHANGES=true" >> $GITHUB_ENV
           fi
 
-      - name: Bump starter package version
+      - name: Bump starter package version to follow upstream
         if: ${{ env.HAS_CHANGES == 'true' && env.DRY_RUN != 'true' }}
         run: |
           node <<'EOF'
           const fs = require('fs');
           const p = 'package.json';
           const j = JSON.parse(fs.readFileSync(p, 'utf-8'));
-          const v = j.version || '0.0.0';
-          const parts = v.split('.').map(n => parseInt(n, 10));
-          while (parts.length < 3) parts.push(0);
 
-          const parseVersion = (v) => {
-            if (!v || v === '0.0.0') return { major: 0, minor: 0, patch: 0 };
-            const parts = v.split('.').map(n => parseInt(n, 10));
-            return {
-              major: isNaN(parts[0]) ? 0 : parts[0],
-              minor: isNaN(parts[1]) ? 0 : parts[1],
-              patch: isNaN(parts[2]) ? 0 : parts[2],
-            };
-          };
+          const upstream = process.env.X402_HONO_VERSION || '0.0.0';
+          const [upMajor, upMinor] = upstream.split('.').map(Number);
+          const [curMajor, curMinor, curPatch] = (j.version || '0.0.0').split('.').map(Number);
 
-          const compareVersions = (oldV, newV) => {
-            if (oldV === '0.0.0') return 'none'; // New dependency, don't count as change
-            const old = parseVersion(oldV);
-            const new_ = parseVersion(newV);
-
-            if (old.major < new_.major) return 'major';
-            if (old.major === new_.major && old.minor < new_.minor) return 'minor';
-            if (old.major === new_.major && old.minor === new_.minor && old.patch < new_.patch) return 'patch';
-            return 'none';
-          };
-
-          const oldHono = process.env.OLD_X402_HONO_VERSION || '0.0.0';
-          const newHono = process.env.X402_HONO_VERSION || '0.0.0';
-          const change = compareVersions(oldHono, newHono);
-
-          if (change === 'major' || change === 'minor') {
-            parts[1] = (parts[1] || 0) + 1;
-            parts[2] = 0;
-            console.log(`Detected ${change} version change in @x402/hono: ${oldHono} → ${newHono}`);
-            console.log('Bumping minor version');
+          if (curMajor === upMajor && curMinor === upMinor) {
+            j.version = `${upMajor}.${upMinor}.${curPatch + 1}`;
           } else {
-            parts[2] = (parts[2] || 0) + 1;
-            console.log('Only patch changes detected, bumping patch version');
+            j.version = `${upMajor}.${upMinor}.0`;
           }
 
-          j.version = parts.join('.');
           fs.writeFileSync(p, JSON.stringify(j, null, 2));
-          console.log(`Bumped version to ${j.version}`);
+          console.log(`Starter version set to ${j.version} (tracking @x402/hono@${upstream})`);
           EOF
         env:
-          OLD_X402_HONO_VERSION: ${{ env.OLD_X402_HONO_VERSION }}
           X402_HONO_VERSION: ${{ env.X402_HONO_VERSION }}
 
       - name: Open PR with changes
