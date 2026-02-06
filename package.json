@@ -1,6 +1,6 @@
 {
   "name": "@payai/x402-hono-starter",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "publishConfig": {
     "access": "public",
@@ -37,6 +37,6 @@
     "url": "git+https://github.com/PayAINetwork/x402-hono-starter.git"
   },
   "config": {
-    "x402HonoVersion": "2.2.0"
+    "x402HonoVersion": "2.3.0"
   }
 }
