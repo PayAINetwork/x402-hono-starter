@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# This comment is a harmless no-op to ensure GitHub shows the script contents in PRs
 UP_PATH="${1:-examples/typescript/servers/hono}"
 UP_SHA="${2:-unknown}"
 
@@ -60,55 +59,71 @@ if [[ -f template/index.ts ]]; then
   sed -i.bak "s/from 'x402-hono'/from '@x402\/hono'/g" template/index.ts && rm -f template/index.ts.bak
 fi
 
-# add the payai facilitator URL and NETWORK in env templates after sync
-DEFAULT_FACILITATOR_URL="https://facilitator.payai.network"
-DEFAULT_NETWORK="solana-devnet"
+# =============================================================================
+# PayAI-specific patches (applied after upstream sync)
+# =============================================================================
 
-# Replace or append a key=value in the provided file. Creates the file if explicitly requested.
-update_env_var() {
-  local file="$1"
-  local key="$2"
-  local value="$3"
-  local create_if_missing="${4:-false}"
-
-  if [[ ! -f "$file" && "$create_if_missing" == "true" ]]; then
-    mkdir -p "$(dirname "$file")"
-    : > "$file"
+# --- index.ts: add @payai/facilitator import and replace facilitator client ---
+if [[ -f template/index.ts ]]; then
+  # Add the @payai/facilitator import after the last @x402 import
+  if ! grep -q '@payai/facilitator' template/index.ts; then
+    sed -i.bak '/^import.*@x402\/.*$/a\
+import { facilitator } from "@payai/facilitator";' template/index.ts && rm -f template/index.ts.bak
+    # De-duplicate in case multiple @x402 imports triggered multiple inserts
+    awk '!seen[$0]++ || $0 !~ /@payai\/facilitator/' template/index.ts > template/index.ts.tmp \
+      && mv template/index.ts.tmp template/index.ts
   fi
 
-  if [[ -f "$file" ]]; then
-    if grep -Eq "^[[:space:]]*${key}=" "$file"; then
-      # Replace existing non-commented line for the key
-      sed -i.bak -E "s|^[[:space:]]*${key}=.*|${key}=${value}|" "$file" && rm -f "$file.bak"
-    else
-      printf "\n%s=%s\n" "$key" "$value" >> "$file"
-    fi
+  # Remove FACILITATOR_URL env var check and manual client construction
+  # Replace with: const facilitatorClient = new HTTPFacilitatorClient(facilitator);
+  sed -i.bak '/^const facilitatorUrl/,/^const facilitatorClient/c\
+const facilitatorClient = new HTTPFacilitatorClient(facilitator);' template/index.ts && rm -f template/index.ts.bak
+fi
+
+# --- package.json: ensure @payai/facilitator dependency is present ---
+if [[ -f template/package.json ]]; then
+  node <<'PATCH_DEPS'
+  const fs = require('fs');
+  const p = 'template/package.json';
+  const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+  j.dependencies = j.dependencies || {};
+  if (!j.dependencies['@payai/facilitator']) {
+    j.dependencies['@payai/facilitator'] = '^1.0.0';
+  }
+  fs.writeFileSync(p, JSON.stringify(j, null, 2));
+PATCH_DEPS
+fi
+
+# --- .env-local / .env.example: replace FACILITATOR_URL with API key vars ---
+patch_env_file() {
+  local file="$1"
+  if [[ ! -f "$file" ]]; then
+    return
+  fi
+
+  # Remove FACILITATOR_URL line if present
+  sed -i.bak '/^FACILITATOR_URL=/d' "$file" && rm -f "$file.bak"
+
+  # Remove NETWORK line if present (no longer needed)
+  sed -i.bak '/^NETWORK=/d' "$file" && rm -f "$file.bak"
+
+  # Add PayAI API key vars if not already present
+  if ! grep -q 'PAYAI_API_KEY_ID' "$file"; then
+    # Ensure file ends with newline before appending
+    [[ -s "$file" ]] && [[ $(tail -c1 "$file") != $'\n' ]] && echo >> "$file"
+    cat >> "$file" <<'ENVBLOCK'
+
+# PayAI API Key for authenticated facilitator access (optional)
+# Without these, the server works on the free tier.
+# Get your keys at https://merchant.payai.network
+# PAYAI_API_KEY_ID=
+# PAYAI_API_KEY_SECRET=
+ENVBLOCK
   fi
 }
 
-# Cover common env file variants for Hono starters (update if they exist)
-ENV_CANDIDATES=(
-  "template/.env"
-  "template/.env.local"
-  "template/.env.development"
-  "template/.env.example"
-  "template/.env.local.example"
-  "template/.env.sample"
-  "template/env.local"
-  "template/env.example"
-  "template/.env-local"
-)
-
-for env_file in "${ENV_CANDIDATES[@]}"; do
-  update_env_var "$env_file" "FACILITATOR_URL" "$DEFAULT_FACILITATOR_URL"
-  update_env_var "$env_file" "NETWORK" "$DEFAULT_NETWORK"
-done
-
-# Ensure a canonical env.local exists with our expected defaults
-if [[ ! -f template/env.local ]]; then
-  update_env_var "template/env.local" "FACILITATOR_URL" "$DEFAULT_FACILITATOR_URL" true
-  update_env_var "template/env.local" "NETWORK" "$DEFAULT_NETWORK" true
-fi
+patch_env_file template/.env-local
+patch_env_file template/.env.example
 
 # Refresh NOTICE with the commit we synced from
 cat > NOTICE <<EOF

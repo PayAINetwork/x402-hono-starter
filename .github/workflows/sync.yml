@@ -70,30 +70,35 @@ jobs:
             exit 1
           fi
 
-      - name: Verify custom env values are preserved
+      - name: Verify PayAI patches are present
         run: |
           set -euo pipefail
-          echo "Verifying FACILITATOR_URL and NETWORK in template/env.local..."
 
-          if [[ ! -f template/env.local ]]; then
-            echo "ERROR: template/env.local not found"
+          echo "Verifying template/.env-local..."
+          if [[ -f template/.env-local ]]; then
+            if grep -q 'PAYAI_API_KEY_ID' template/.env-local; then
+              echo "✓ PAYAI_API_KEY_ID placeholder present in .env-local"
+            else
+              echo "ERROR: PAYAI_API_KEY_ID not found in template/.env-local"
+              exit 1
+            fi
+          fi
+
+          echo "Verifying template/index.ts..."
+          if grep -q '@payai/facilitator' template/index.ts; then
+            echo "✓ @payai/facilitator import present in index.ts"
+          else
+            echo "ERROR: @payai/facilitator import not found in template/index.ts"
             exit 1
           fi
 
-          FACILITATOR_URL=$(grep '^FACILITATOR_URL=' template/env.local | cut -d= -f2-)
-          NETWORK=$(grep '^NETWORK=' template/env.local | cut -d= -f2-)
-
-          if [[ "$FACILITATOR_URL" != "https://facilitator.payai.network" ]]; then
-            echo "ERROR: FACILITATOR_URL is '$FACILITATOR_URL', expected 'https://facilitator.payai.network'"
+          echo "Verifying template/package.json..."
+          if grep -q '@payai/facilitator' template/package.json; then
+            echo "✓ @payai/facilitator dependency present in package.json"
+          else
+            echo "ERROR: @payai/facilitator not found in template/package.json"
             exit 1
           fi
-
-          if [[ "$NETWORK" != "solana-devnet" ]]; then
-            echo "ERROR: NETWORK is '$NETWORK', expected 'solana-devnet'"
-            exit 1
-          fi
-
-          echo "✓ FACILITATOR_URL and NETWORK are correctly set"
 
       - name: Inject x402 package versions into template/package.json
         run: |
@@ -106,19 +111,22 @@ jobs:
           if (!v || v === '0.0.0') process.exit(0);
 
           j.dependencies = j.dependencies || {};
-          // Ensure all required x402 packages are present with correct versions
           const x402Packages = ['@x402/hono', '@x402/evm', '@x402/svm', '@x402/core', '@x402/extensions'];
           for (const pkg of x402Packages) {
             j.dependencies[pkg] = '^' + v;
           }
 
+          // Ensure @payai/facilitator is always present
+          if (!j.dependencies['@payai/facilitator']) {
+            j.dependencies['@payai/facilitator'] = '^1.0.0';
+          }
+
           fs.writeFileSync(p, JSON.stringify(j, null, 2));
-          console.log(`Set x402 packages to ^${v}`);
+          console.log(`Set x402 packages to ^${v}, @payai/facilitator preserved`);
           EOF
 
       - name: Determine if there are changes
         run: |
-          # include untracked files in change detection
           if git diff --quiet && git ls-files --others --exclude-standard --error-unmatch . >/dev/null 2>&1; then
             echo "HAS_CHANGES=false" >> $GITHUB_ENV
           else
