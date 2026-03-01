@@ -7,7 +7,6 @@ import { Hono } from "hono";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
-import { facilitator } from "@payai/facilitator";
 
 const app = new Hono();
 
@@ -20,7 +19,7 @@ app.use(
         mimeType: "application/json",
       },
     },
-    new x402ResourceServer(new HTTPFacilitatorClient(facilitator))
+    new x402ResourceServer(new HTTPFacilitatorClient({ url: facilitatorUrl }))
       .register("eip155:84532", new ExactEvmScheme()),
   ),
 );
@@ -33,6 +32,7 @@ app.get("/weather", c => c.json({ weather: "sunny", temperature: 70 }));
 - Node.js v20+ (install via [nvm](https://github.com/nvm-sh/nvm))
 - pnpm v10 (install via [pnpm.io/installation](https://pnpm.io/installation))
 - Valid EVM and SVM addresses for receiving payments
+- URL of a facilitator supporting the desired payment network, see [facilitator list](https://www.x402.org/ecosystem?category=facilitators)
 
 ## Setup
 
@@ -44,6 +44,7 @@ cp .env-local .env
 
 and fill required environment variables:
 
+- `FACILITATOR_URL` - Facilitator endpoint URL
 - `EVM_ADDRESS` - Ethereum address to receive payments
 - `SVM_ADDRESS` - Solana address to receive payments
 
@@ -230,31 +231,16 @@ const resourceServer = new x402ResourceServer(facilitatorClient)
 
 ## Facilitator Config
 
-This starter uses `@payai/facilitator` which provides a pre-configured facilitator pointing to the PayAI facilitator at `https://facilitator.payai.network`:
+The `HTTPFacilitatorClient` connects to a facilitator service that verifies and settles payments on-chain:
 
 ```typescript
-import { facilitator } from "@payai/facilitator";
+const facilitatorClient = new HTTPFacilitatorClient({ url: facilitatorUrl });
 
-const facilitatorClient = new HTTPFacilitatorClient(facilitator);
-```
-
-By default, the server works without any API keys (free tier). When you're ready to go to production, create a merchant account at [merchant.payai.network](https://merchant.payai.network), get your API keys, and set the environment variables:
-
-```bash
-PAYAI_API_KEY_ID=your-key-id
-PAYAI_API_KEY_SECRET=your-key-secret
-```
-
-The `@payai/facilitator` package will automatically detect these and authenticate your requests.
-
-For advanced use cases (e.g. passing credentials explicitly), use `createFacilitatorConfig`:
-
-```typescript
-import { createFacilitatorConfig } from "@payai/facilitator";
-
-const facilitatorClient = new HTTPFacilitatorClient(
-  createFacilitatorConfig("your-key-id", "your-key-secret"),
-);
+// Or use multiple facilitators for redundancy
+const facilitatorClient = [
+  new HTTPFacilitatorClient({ url: primaryFacilitatorUrl }),
+  new HTTPFacilitatorClient({ url: backupFacilitatorUrl }),
+];
 ```
 
 ## Next Steps
